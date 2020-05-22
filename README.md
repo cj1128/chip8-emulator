@@ -7,6 +7,10 @@ http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.4
 All instructions are 2 bytes long and are stored most-significant-byte first.
 
 4K RAM (0x200 ~ 0xfff),
+- 0x0 ~ 0x1ff: reserverd
+- 0x200 ~ 0xe9f: RAM
+- 0xea0 ~ 0xeff: stack, internal use, other variables
+- 0xf00 ~ 0xfff: display
 
 64x32 Display (1 bit pixel) Start 0xf00
 
@@ -18,10 +22,17 @@ V0 ~ Vf: 16 8bit registers
 
 I: address register
 
-## Design
+## NOTE
+
+- 8XYE: Store vx
+- 8XY6:
+- FX55:
+- FX65:
 
 ## Test
 
+https://github.com/corax89/chip8-test-rom
+BC_Test
+
 ROMS https://github.com/dmatlack/chip8
 
-BC_Test
