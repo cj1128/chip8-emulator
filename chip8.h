@@ -4,6 +4,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define Assert(expr)                                                           \
+  if(!(expr)) {                                                                \
+    printf("assert error: %s\n", #expr);                                       \
+    *(volatile int *)0 = 0;                                                    \
+  }
+
+#define InvalidCodePath Assert(!"invalid code path")
+
 #define SCREEN_WIDTH 64
 #define SCREEN_HEIGHT 32
 
@@ -20,8 +28,8 @@ typedef u8(random_number_fn)(void);
 
 typedef struct chip8_vm {
   u8 ram[4096];
+  u8 *screen; // ram[0xf00 ~ 0xfff]
 
-  u8 *_screen; // ram[0xf00 ~ 0xfff]
   u16 *_stack;
   u16 _size; // ROM size in bytes
 
@@ -34,24 +42,18 @@ typedef struct chip8_vm {
 
   bool keystate[16];
   bool stop;
+  bool wait;
+  int waitReg;
 
   // Platform services
-  update_keyboard_fn *updateKeyboard;
-  update_screen_fn *updateScreen;
-  wait_keyboard_fn *waitKeyboard;
   random_number_fn *random;
 } chip8_vm;
 
-chip8_vm *Chip8_New(u8 rom[],
-  uint romSize,
-  update_keyboard_fn *updateKeyboard,
-  update_screen_fn *updateScreen,
-  wait_keyboard_fn *waitKeyboard,
-  random_number_fn *random);
+chip8_vm *Chip8_New(u8 rom[], uint romSize, random_number_fn *random);
 
 char *Chip8_GetError(void);
 
-void Chip8_Run(chip8_vm *vm);
+void Chip8_Tick(chip8_vm *vm);
 
 int Chip8_GetPixel(u8 screen[], int x, int y);
 

@@ -4,14 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define Assert(expr)                                                           \
-  if(!(expr)) {                                                                \
-    printf("assert error: %s\n", #expr);                                       \
-    *(volatile int *)0 = 0;                                                    \
-  }
-
-#define InvalidCodePath Assert(!"invalid code path")
-
 // clang-format off
 static u8 fontROM[] = {
   // 4x5 font sprites (0-F)
@@ -55,7 +47,7 @@ SetPixel(chip8_vm *vm, int x, int y, bool on)
   int index = y * SCREEN_WIDTH + x;
   int byteIndex = index / 8;
   int offset = index % 8;
-  u8 byte = vm->_screen[byteIndex];
+  u8 byte = vm->screen[byteIndex];
 
   if(on) {
     byte = byte | (0x80 >> offset);
@@ -63,7 +55,7 @@ SetPixel(chip8_vm *vm, int x, int y, bool on)
     byte = byte & (~(0x80 >> offset));
   }
 
-  vm->_screen[byteIndex] = byte;
+  vm->screen[byteIndex] = byte;
 }
 
 char *
@@ -84,17 +76,12 @@ void
 ClearScreen(chip8_vm *vm)
 {
   for(int i = 0; i < 256; i++) {
-    vm->_screen[i] = 0;
+    vm->screen[i] = 0;
   }
 }
 
 chip8_vm *
-Chip8_New(u8 rom[],
-  uint romSize,
-  update_keyboard_fn *updateKeyboard,
-  update_screen_fn *updateScreen,
-  wait_keyboard_fn *waitKeyboard,
-  random_number_fn *random)
+Chip8_New(u8 rom[], uint romSize, random_number_fn *random)
 {
   chip8_vm *vm = malloc(sizeof(chip8_vm));
   if(vm == NULL) {
@@ -107,21 +94,19 @@ Chip8_New(u8 rom[],
     return NULL;
   }
 
+  // Clear to zero
+  memset(vm, 0, sizeof(chip8_vm));
+
   // Load ROM
   memcpy(vm->ram + 0x200, rom, romSize);
 
   memcpy(vm->ram, fontROM, sizeof(fontROM));
 
-  vm->_screen = &vm->ram[0xf00];
+  vm->screen = &vm->ram[0xf00];
   vm->_stack = (u16 *)&vm->ram[0xea0];
   vm->pc = 0x200;
   vm->sp = 0;
   vm->_size = romSize;
-  vm->stop = false;
-
-  vm->updateKeyboard = updateKeyboard;
-  vm->updateScreen = updateScreen;
-  vm->waitKeyboard = waitKeyboard;
   vm->random = random;
 
   ClearScreen(vm);
@@ -160,7 +145,7 @@ static void
 Op_2(chip8_vm *vm, u16 ins)
 {
   Assert(vm->sp < 16);
-  vm->_stack[vm->sp++] = vm->pc + 2;
+  vm->_stack[vm->sp++] = vm->pc;
   vm->pc = ins & 0xfff;
 }
 
@@ -335,7 +320,7 @@ Op_D(chip8_vm *vm, u16 ins)
       // NOTE: spritePixel and screenPixel are 0 or non-zero
       // not 0 or 1 !!!
       int spritePixel = spriteByte & (0x80 >> (x - startX));
-      int screenPixel = Chip8_GetPixel(vm->_screen, x, y);
+      int screenPixel = Chip8_GetPixel(vm->screen, x, y);
 
       if(spritePixel) {
         if(screenPixel) {
@@ -346,11 +331,6 @@ Op_D(chip8_vm *vm, u16 ins)
       }
     }
   }
-
-  // for(int i = 0; i < 100; i++) {
-  //   printf("%2x ", vm->_screen[i]);
-  // }
-  // printf("\n");
 }
 
 static void
@@ -391,8 +371,8 @@ Op_F(chip8_vm *vm, u16 ins)
 
   // FX0A
   case 0x0a: {
-    u8 key = vm->waitKeyboard();
-    vm->v[x] = key;
+    vm->wait = true;
+    vm->waitReg = (ins >> 8) & 0xf;
   } break;
 
   // FX15
@@ -428,8 +408,6 @@ Op_F(chip8_vm *vm, u16 ins)
     for(int i = 0; i <= x; i++) {
       vm->ram[vm->i + i] = vm->v[i];
     }
-
-    // vm->i += x + 1;
   } break;
 
   // FX65
@@ -437,19 +415,24 @@ Op_F(chip8_vm *vm, u16 ins)
     for(int i = 0; i <= x; i++) {
       vm->v[i] = vm->ram[vm->i + i];
     }
-
-    // vm->i += x + 1;
   } break;
   }
 }
 
-static void
-tick(chip8_vm *vm)
+void
+Chip8_Tick(chip8_vm *vm)
 {
+  if(vm->wait) {
+    // printf("vm: wait\n");
+    return;
+  }
+
+  // Debug check for handwritten short chip8 program
   if(vm->pc >= 0x200 + vm->_size)
     return;
 
   u16 ins = (vm->ram[vm->pc] << 8) | (vm->ram[vm->pc + 1]);
+  // printf("[%3x]: %04x, delay timer: %d\n", vm->pc, ins, vm->delayTimer);
   vm->pc += 2;
 
   switch(ins >> 12) {
@@ -516,17 +499,5 @@ tick(chip8_vm *vm)
   case 0xf: {
     Op_F(vm, ins);
   } break;
-  }
-}
-
-void
-Chip8_Run(chip8_vm *vm)
-{
-  while(!vm->stop) {
-    vm->updateKeyboard(vm, vm->keystate);
-
-    tick(vm);
-
-    vm->updateScreen(vm->_screen);
   }
 }

@@ -29,6 +29,28 @@ I: address register
 - FX55:
 - FX65:
 
+## Keymapping
+
+```text
+1 2 3 C        1 2 3 4
+4 5 6 D   ->   Q W E R
+7 8 9 E        A S D F
+A 0 B F        Z X C V
+```
+
+## Tetris
+
+Q: transform
+W: left
+E: right
+A: drop
+
+## Reference
+
+https://code.austinmorlan.com/austin/chip8-emulator
+
+https://github.com/massung/CHIP-8
+
 ## Test
 
 https://github.com/corax89/chip8-test-rom
