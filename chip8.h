@@ -11,6 +11,7 @@
   }
 
 #define InvalidCodePath Assert(!"invalid code path")
+#define Minimum(a, b) ((a) < (b) ? a : b)
 
 #define SCREEN_WIDTH 64
 #define SCREEN_HEIGHT 32
@@ -55,6 +56,6 @@ char *Chip8_GetError(void);
 
 void Chip8_Tick(chip8_vm *vm);
 
-int Chip8_GetPixel(u8 screen[], int x, int y);
+int Chip8_GetPixel(chip8_vm *vm, int x, int y);
 
 #endif

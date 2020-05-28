@@ -12,6 +12,11 @@ typedef struct {
   SDL_Window *win;
   SDL_Renderer *renderer;
   SDL_Texture *screen;
+
+  SDL_AudioDeviceID audioDevice;
+  uint audioSampleCount;
+  void *audioBuf;
+  uint audioBufLength;
 } sdl_handle;
 
 sdl_handle gSDL;
@@ -86,6 +91,7 @@ ReadFile(char *path)
     printf("error: fread failed\n");
     exit(1);
   }
+  fclose(f);
 
   file_content result = {};
   result.buf = buf;
@@ -137,18 +143,15 @@ ProcessEvents(chip8_vm *vm)
 void
 UpdateScreen(chip8_vm *vm)
 {
-  u8 *screen = vm->screen;
   void *rawPixels;
   int pitch;
   SDL_LockTexture(gSDL.screen, NULL, &rawPixels, &pitch);
 
-  int width = pitch / 4;
-  typedef uint32_t(*pixels_t)[width];
-  pixels_t pixels = (pixels_t)rawPixels;
+  u32(*pixels)[pitch / 4] = rawPixels;
 
   for(int y = 0; y < SCREEN_HEIGHT; y++) {
     for(int x = 0; x < SCREEN_WIDTH; x++) {
-      int pixel = Chip8_GetPixel(screen, x, y);
+      int pixel = Chip8_GetPixel(vm, x, y);
       pixels[y][x] = pixel == 0 ? PIXEL_OFF_COLOR : PIXEL_ON_COLOR;
     }
   }
@@ -185,7 +188,7 @@ InitSDL(char *name, int width, int height, int scale)
     exit(1);
   }
 
-  uint32_t flags = SDL_RENDERER_ACCELERATED;
+  uint32_t flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
   SDL_Renderer *renderer = SDL_CreateRenderer(win, -1, flags);
   if(renderer == NULL) {
     printf("error: %s\n", SDL_GetError());
@@ -206,6 +209,65 @@ InitSDL(char *name, int width, int height, int scale)
   gSDL.win = win;
   gSDL.renderer = renderer;
   gSDL.screen = texture;
+
+  // Audio
+  if(SDL_GetNumAudioDevices(0) <= 0) {
+    gSDL.audioDevice = 0;
+  } else {
+    SDL_AudioSpec want = {}, have;
+    SDL_AudioDeviceID device;
+    want.freq = 64 * 60;
+    want.format = AUDIO_F32;
+    want.channels = 1;
+    want.samples = 64;
+
+    device = SDL_OpenAudioDevice(NULL,
+      0,
+      &want,
+      &have,
+      SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+    if(device == 0) {
+      printf("error: %s", SDL_GetError());
+      exit(1);
+    }
+
+    gSDL.audioDevice = device;
+    gSDL.audioSampleCount = have.samples * have.channels;
+    uint bufLength = gSDL.audioSampleCount * 4;
+    gSDL.audioBuf = malloc(bufLength);
+    if(gSDL.audioBuf == NULL) {
+      printf("malloc failed");
+      exit(1);
+    }
+    gSDL.audioBufLength = bufLength;
+
+    SDL_PauseAudioDevice(device, 0);
+  }
+}
+
+void
+UpdateAudio(chip8_vm *vm)
+{
+  if(gSDL.audioDevice == 0)
+    return;
+
+  float *buf = (float *)gSDL.audioBuf;
+  float value = vm->soundTimer > 0 ? 1.0f : 0.0f;
+
+  // NOTE: only have 1 channel
+  for(int i = 0; i < gSDL.audioSampleCount; i++) {
+    buf[i] = value;
+  }
+
+  SDL_QueueAudio(gSDL.audioDevice, buf, gSDL.audioBufLength);
+}
+
+void
+track(char *label, u32 *t)
+{
+  u32 tick = SDL_GetTicks();
+  printf("%s: %d\n", label, tick - *t);
+  *t = tick;
 }
 
 int
@@ -237,8 +299,6 @@ main(int argc, char *argv[])
   u32 timerInterval = 1000 / 60;
 
   while(!vm->stop) {
-    // TODO: sound
-
     if(SDL_GetTicks() - timerTick >= timerInterval) {
       timerTick = SDL_GetTicks();
       if(vm->delayTimer > 0) {
@@ -256,9 +316,21 @@ main(int argc, char *argv[])
     SDL_Delay(1);
 
     if(SDL_GetTicks() - renderTick >= renderInterval) {
-      renderTick = SDL_GetTicks();
       UpdateScreen(vm);
+      renderTick = SDL_GetTicks();
+
+      UpdateAudio(vm);
     }
+
+#if 0
+    // Debug info
+    {
+      static u32 perfTick = 0;
+      u32 tick = SDL_GetTicks();
+      printf("ms: %d, fsp: %f\n", tick - perfTick, 1000.0f / (tick - perfTick));
+      perfTick = tick;
+    }
+#endif
   }
 
   return 0;

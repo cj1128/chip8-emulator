@@ -33,8 +33,9 @@ static char errorBuf[256];
 
 // Return 0 or non-zero
 int
-Chip8_GetPixel(u8 screen[], int x, int y)
+Chip8_GetPixel(chip8_vm *vm, int x, int y)
 {
+  u8 *screen = vm->screen;
   int index = y * SCREEN_WIDTH + x;
   int byteIndex = index / 8;
   int offset = index % 8;
@@ -44,6 +45,7 @@ Chip8_GetPixel(u8 screen[], int x, int y)
 void
 SetPixel(chip8_vm *vm, int x, int y, bool on)
 {
+  // printf("set pixel, x: %d, y: %d\n", x, y);
   int index = y * SCREEN_WIDTH + x;
   int byteIndex = index / 8;
   int offset = index % 8;
@@ -309,8 +311,8 @@ Op_D(chip8_vm *vm, u16 ins)
     startY = startY % SCREEN_HEIGHT;
   }
 
-  int endX = startX + 8;
-  int endY = startY + n;
+  int endX = Minimum(startX + 8, SCREEN_WIDTH);
+  int endY = Minimum(startY + n, SCREEN_HEIGHT);
 
   vm->v[0xf] = 0;
 
@@ -320,7 +322,7 @@ Op_D(chip8_vm *vm, u16 ins)
       // NOTE: spritePixel and screenPixel are 0 or non-zero
       // not 0 or 1 !!!
       int spritePixel = spriteByte & (0x80 >> (x - startX));
-      int screenPixel = Chip8_GetPixel(vm->screen, x, y);
+      int screenPixel = Chip8_GetPixel(vm, x, y);
 
       if(spritePixel) {
         if(screenPixel) {
@@ -423,9 +425,10 @@ void
 Chip8_Tick(chip8_vm *vm)
 {
   if(vm->wait) {
-    // printf("vm: wait\n");
     return;
   }
+
+  Assert(vm->pc >= 0x200);
 
   // Debug check for handwritten short chip8 program
   if(vm->pc >= 0x200 + vm->_size)
