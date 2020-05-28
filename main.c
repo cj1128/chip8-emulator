@@ -281,7 +281,7 @@ main(int argc, char *argv[])
   // Seed the rand
   srand(time(0));
 
-  int scale = 6;
+  int scale = 10;
   InitSDL("Chip8 Emulator", SCREEN_WIDTH, SCREEN_HEIGHT, scale);
 
   file_content content = ReadFile(argv[1]);

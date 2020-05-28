@@ -1,5 +1,5 @@
 run:
-	./bin/chip8 rom/test.ch8
+	./bin/chip8 rom/test_opcode.ch8
 
 chip8:
 	mkdir -p bin

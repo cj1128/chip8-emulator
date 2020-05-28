@@ -1,33 +1,31 @@
-# Chip8 Emulator
+# CHIP-8 Emulator
 
-http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.4
+A simple CHIP-8 emulator written in C.
 
-## Emulator spec
+<div align="center">
+  <img src="http://asset.cjting.cn/FifM5E9dOL3g2XUxyqzc1cCiptd_.png">
+</div>
 
-All instructions are 2 bytes long and are stored most-significant-byte first.
+## Spec
 
-4K RAM (0x200 ~ 0xfff),
-- 0x0 ~ 0x1ff: reserverd
-- 0x200 ~ 0xe9f: RAM
-- 0xea0 ~ 0xeff: stack, internal use, other variables
-- 0xf00 ~ 0xfff: display
-
-64x32 Display (1 bit pixel) Start 0xf00
-
-Font starts at 0x000. 4x5
-
-Delay and Sound timer: 8bit
-
-V0 ~ Vf: 16 8bit registers
-
-I: address register
-
-## NOTE
-
-- 8XYE: Store vx
-- 8XY6:
-- FX55:
-- FX65:
+- All instructions are 2 bytes long and are stored most-significant-byte first.
+- 4K RAM (`0x0 ~ 0xfff`)
+  - `0x0 ~ 0x1ff`: reserverd for system
+  - `0x200 ~ 0xe9f`: freely used RAM
+  - `0xea0 ~ 0xeff`: reserved for stack, internal use and other variables
+  - `0xf00 ~ 0xfff`: for display
+- 64x32 resolution display (1 bit per pixel)
+- Font sprite starts at `0x000`, see details below
+- 8-bit delay and sound timer
+- 16 8-bit registers `V0` ~ `VF`
+- A 16-bit program counter (`PC`)
+- A 8-bit stack pointer (`SP`)
+- One 16-bit address register `I`
+- [Instruction set](https://github.com/mattmikolay/chip-8/wiki/CHIP%E2%80%908-Instruction-Set)
+  - `8XYE`: `VF` should be the most significant bit of `VX` not `VY` prior to the shift
+  - `8XY6`: Same as above
+  - `FX55`: Don't increset `I`
+  - `FX65`: Same as above
 
 ## Keymapping
 
@@ -38,23 +36,30 @@ I: address register
 A 0 B F        Z X C V
 ```
 
-## Tetris
+## Build
 
-Q: transform
-W: left
-E: right
-A: drop
+This emulator uses [SDL2](https://www.libsdl.org/download-2.0.php) to do the rendering, so you need to install SDL2 first.
 
-## Reference
-
-https://code.austinmorlan.com/austin/chip8-emulator
-
-https://github.com/massung/CHIP-8
+```
+$ git clone https://github.com/cj1128/chip8-emulator
+$ cd chip8-emulator
+$ make build
+$ make run
+```
 
 ## Test
 
-https://github.com/corax89/chip8-test-rom
-BC_Test
+There are a few roms in the `rom` directory of repo.
 
-ROMS https://github.com/dmatlack/chip8
+`BC_Test.ch8` and `test_opcode.ch8` are used for testing the fundamental functions of our emulator.
+
+`test.ch8` is used for testing arbitrary instructions written by ourself.
+
+All others are games for fully testing our emulator 🎮.
+
+## Reference
+
+- http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.4
+- https://code.austinmorlan.com/austin/chip8-emulator
+- https://github.com/massung/CHIP-8
 
