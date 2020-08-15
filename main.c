@@ -1,5 +1,6 @@
 #include "chip8.h"
 #include <stdlib.h>
+#include <time.h>
 #include <stdio.h>
 #include <SDL2/SDL.h>
 
@@ -27,41 +28,41 @@ static int
 MapForChip8(u32 keycode)
 {
   switch(keycode) {
-  case SDLK_1:
-    return 1;
-  case SDLK_2:
-    return 2;
-  case SDLK_3:
-    return 3;
-  case SDLK_4:
-    return 4;
+    case SDLK_1:
+      return 1;
+    case SDLK_2:
+      return 2;
+    case SDLK_3:
+      return 3;
+    case SDLK_4:
+      return 4;
 
-  case SDLK_q:
-    return 4;
-  case SDLK_w:
-    return 5;
-  case SDLK_e:
-    return 6;
-  case SDLK_r:
-    return 0xd;
+    case SDLK_q:
+      return 4;
+    case SDLK_w:
+      return 5;
+    case SDLK_e:
+      return 6;
+    case SDLK_r:
+      return 0xd;
 
-  case SDLK_a:
-    return 7;
-  case SDLK_s:
-    return 8;
-  case SDLK_d:
-    return 9;
-  case SDLK_f:
-    return 0xe;
+    case SDLK_a:
+      return 7;
+    case SDLK_s:
+      return 8;
+    case SDLK_d:
+      return 9;
+    case SDLK_f:
+      return 0xe;
 
-  case SDLK_z:
-    return 0xa;
-  case SDLK_x:
-    return 0;
-  case SDLK_c:
-    return 0xb;
-  case SDLK_v:
-    return 0xf;
+    case SDLK_z:
+      return 0xa;
+    case SDLK_x:
+      return 0;
+    case SDLK_c:
+      return 0xb;
+    case SDLK_v:
+      return 0xf;
   }
 
   return -1;

@@ -1,6 +1,6 @@
 # CHIP-8 Emulator
 
-A simple CHIP-8 emulator written in C.
+A simple CHIP-8 emulator written in C using SDL2.
 
 <div align="center">
   <img src="http://asset.cjting.cn/FifM5E9dOL3g2XUxyqzc1cCiptd_.png">
@@ -38,14 +38,20 @@ A 0 B F        Z X C V
 
 ## Build
 
-This emulator uses [SDL2](https://www.libsdl.org/download-2.0.php) to do the rendering, so you need to install SDL2 first.
+Mac OS:
 
-```
-$ git clone https://github.com/cj1128/chip8-emulator
-$ cd chip8-emulator
-$ make build
-$ make run
-```
+- Install SDL2: `brew install sdl2`
+- Git clone the repo
+- `make buildmac && make test`
+
+Windows:
+
+- Download MSYS2 64bit from here: https://www.msys2.org/
+- Update MSYS2: `pacman -Syu`
+- Install build tools and SDL2: `pacman -S make git mingw-w64-x86_64-toolchain mingw64/mingw-w64-x86_64-SDL2`
+- Start MSYS2 MinGW 64-bit Shell
+- Git clone the repo
+- `make buildwin && make test`
 
 ## Test
 
@@ -62,4 +68,3 @@ All others are games for fully testing our emulator 🎮.
 - http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.4
 - https://code.austinmorlan.com/austin/chip8-emulator
 - https://github.com/massung/CHIP-8
-
